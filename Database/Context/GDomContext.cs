@@ -44,14 +44,12 @@ namespace Database.Context
                 entity.Property(e => e.City).HasMaxLength(40);
 
                 entity.Property(e => e.County)
-                    .HasMaxLength(40)
-                    .IsFixedLength();
+                    .HasMaxLength(40);
 
                 entity.Property(e => e.DeactivationDate).HasColumnType("datetime");
 
                 entity.Property(e => e.Directions)
-                    .HasMaxLength(250)
-                    .IsFixedLength();
+                    .HasMaxLength(250);
 
                 entity.Property(e => e.LastModifiedUtc)
                     .HasColumnName("LastModifiedUTC")
@@ -83,8 +81,7 @@ namespace Database.Context
 
                 entity.Property(e => e.Name)
                     .IsRequired()
-                    .HasMaxLength(40)
-                    .IsFixedLength();
+                    .HasMaxLength(40);
 
                 var seedFacilityTypes = Seed.DataSeeder.InitializeDatabaseFacilityTypes();
                 entity.HasData(seedFacilityTypes);
