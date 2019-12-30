@@ -64,6 +64,9 @@ namespace Database.Context
                 entity.Property(e => e.State).HasMaxLength(40);
 
                 entity.Property(e => e.Telephone).HasMaxLength(10);
+                var seedFacilities = Seed.DataSeeder.InitializeDatabaseFacilities();
+                entity.HasData(seedFacilities);
+
             });
 
             modelBuilder.Entity<FacilityTypes>(entity =>
@@ -82,6 +85,9 @@ namespace Database.Context
                     .IsRequired()
                     .HasMaxLength(40)
                     .IsFixedLength();
+
+                var seedFacilityTypes = Seed.DataSeeder.InitializeDatabaseFacilityTypes();
+                entity.HasData(seedFacilityTypes);
             });
 
             OnModelCreatingPartial(modelBuilder);

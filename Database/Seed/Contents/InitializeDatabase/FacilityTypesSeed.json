@@ -1,0 +1,18 @@
+[
+  {
+    "FacilityTypeId": "b205d15e-a741-4530-8f29-1e1a8d5e35fe",
+    "Name": "Hospital                                ",
+    "ActivationDate": "2019-12-01T00:00:00",
+    "DeactivationDate": null,
+    "LastModifiedUtc": "2019-12-18T00:00:00",
+    "ModifiedBy": "7754ece9-d347-4be4-8a12-212da9be4e8e"
+  },
+  {
+    "FacilityTypeId": "90c31c62-1990-4fe2-a574-df7ebcfcc92b",
+    "Name": "Urgent Care                             ",
+    "ActivationDate": "2019-12-01T00:00:00",
+    "DeactivationDate": null,
+    "LastModifiedUtc": "2019-12-18T00:00:00",
+    "ModifiedBy": "7754ece9-d347-4be4-8a12-212da9be4e8e"
+  }
+]
