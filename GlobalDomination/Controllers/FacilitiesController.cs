@@ -41,6 +41,34 @@ namespace GlobalDomination.Controllers
 
             return facilities;
         }
+        
+        // GET: api/Facilities/Zip/43210
+        [HttpGet("zip/{zip}")]
+        public async Task<ActionResult<IEnumerable<Facilities>>> GetFacilitiesByZip(string zip)
+        {
+            var facilities = await _context.Facilities.Where(f => f.PostalCode.ToLower() == zip.ToLower()).ToListAsync();
+
+            if (facilities == null)
+            {
+                return NotFound();
+            }
+
+            return facilities;
+        }
+
+        // GET: api/Facilities/State/OH
+        [HttpGet("state/{state}")]
+        public async Task<ActionResult<IEnumerable<Facilities>>> GetFacilitiesByState(string state)
+        {
+            var facilities = await _context.Facilities.Where(f => f.State.ToLower() == state.ToLower()).ToListAsync();
+
+            if (facilities == null)
+            {
+                return NotFound();
+            }
+
+            return facilities;
+        }
 
         // PUT: api/Facilities/5
         // To protect from overposting attacks, please enable the specific properties you want to bind to, for
