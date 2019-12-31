@@ -7,6 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Database.Context;
 using Database.Entity;
+using Polly;
+using Microsoft.Extensions.Caching.Distributed;
+using Polly.Registry;
+using GlobalDomination.Utilities;
 
 namespace GlobalDomination.Controllers
 {
@@ -15,24 +19,24 @@ namespace GlobalDomination.Controllers
     public class FacilitiesController : ControllerBase
     {
         private readonly GDomContext _context;
+        private readonly IAsyncPolicy<Facilities> _itemCachePolicy;
+        private readonly IAsyncPolicy<List<Facilities>> _collectionCachePolicy;
+        private readonly IDistributedCache _cache;
+        private const string _facilityKey = "FacilityCacheKey";
 
-        public FacilitiesController(GDomContext context)
+        public FacilitiesController(GDomContext context, IDistributedCache cache, IReadOnlyPolicyRegistry<string> policyRegistry)
         {
             _context = context;
+            _cache = cache;
+            _itemCachePolicy = policyRegistry.Get<IAsyncPolicy<Facilities>>(CachePolicyHelper.FacilitiesEntityCachePolicyName);
+            _collectionCachePolicy = policyRegistry.Get<IAsyncPolicy<List<Facilities>>>(CachePolicyHelper.FacilitiesEntityCollectionCachePolicyName);
         }
 
         // GET: api/Facilities
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Facilities>>> GetFacilities()
         {
-            return await _context.Facilities.ToListAsync();
-        }
-
-        // GET: api/Facilities/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Facilities>> GetFacilities(Guid id)
-        {
-            var facilities = await _context.Facilities.FindAsync(id);
+            var facilities = await _collectionCachePolicy.ExecuteAsync(context => _context.Facilities.ToListAsync<Facilities>(), new Context(_facilityKey));
 
             if (facilities == null)
             {
@@ -41,12 +45,26 @@ namespace GlobalDomination.Controllers
 
             return facilities;
         }
+
+        // GET: api/Facilities/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Facilities>> GetFacilities(Guid id)
+        {
+            var facility = await _itemCachePolicy.ExecuteAsync(context => _context.Facilities.FindAsync(id).AsTask(), new Context(_facilityKey + id));
+
+            if (facility == null)
+            {
+                return NotFound();
+            }
+
+            return facility;
+        }
         
         // GET: api/Facilities/Zip/43210
         [HttpGet("zip/{zip}")]
         public async Task<ActionResult<IEnumerable<Facilities>>> GetFacilitiesByZip(string zip)
         {
-            var facilities = await _context.Facilities.Where(f => f.PostalCode.ToLower() == zip.ToLower()).ToListAsync();
+            var facilities = await _collectionCachePolicy.ExecuteAsync(context => _context.Facilities.Where(f => f.PostalCode.ToLower() == zip.ToLower()).ToListAsync(), new Context(_facilityKey + zip));
 
             if (facilities == null)
             {
@@ -60,7 +78,7 @@ namespace GlobalDomination.Controllers
         [HttpGet("state/{state}")]
         public async Task<ActionResult<IEnumerable<Facilities>>> GetFacilitiesByState(string state)
         {
-            var facilities = await _context.Facilities.Where(f => f.State.ToLower() == state.ToLower()).ToListAsync();
+            var facilities = await _collectionCachePolicy.ExecuteAsync(context => _context.Facilities.Where(f => f.State.ToLower() == state.ToLower()).ToListAsync(), new Context(_facilityKey + state));
 
             if (facilities == null)
             {
@@ -76,10 +94,15 @@ namespace GlobalDomination.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutFacilities(Guid id, Facilities facilities)
         {
+
             if (id != facilities.FacilityId)
             {
                 return BadRequest();
             }
+            await _cache.RemoveAsync(_facilityKey);
+            await _cache.RemoveAsync(_facilityKey + facilities.PostalCode);
+            await _cache.RemoveAsync(_facilityKey + facilities.State);
+            await _cache.RemoveAsync(_facilityKey + id);
 
             _context.Entry(facilities).State = EntityState.Modified;
 
@@ -108,6 +131,7 @@ namespace GlobalDomination.Controllers
         [HttpPost]
         public async Task<ActionResult<Facilities>> PostFacilities(Facilities facilities)
         {
+            await _cache.RemoveAsync(_facilityKey);
             _context.Facilities.Add(facilities);
             await _context.SaveChangesAsync();
 
@@ -123,6 +147,10 @@ namespace GlobalDomination.Controllers
             {
                 return NotFound();
             }
+            await _cache.RemoveAsync(_facilityKey);
+            await _cache.RemoveAsync(_facilityKey + facilities.PostalCode);
+            await _cache.RemoveAsync(_facilityKey + facilities.State);
+            await _cache.RemoveAsync(_facilityKey + id);
 
             _context.Facilities.Remove(facilities);
             await _context.SaveChangesAsync();
