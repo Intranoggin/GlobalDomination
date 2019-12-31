@@ -10,6 +10,9 @@ namespace Database.Context
         public GDomContext()
         {
         }
+        public GDomContext(DbContextOptionsBuilder<GDomContext> readOptions)
+        {
+        }
 
         public GDomContext(DbContextOptions<GDomContext> options)
             : base(options)

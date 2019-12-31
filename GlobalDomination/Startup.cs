@@ -31,8 +31,18 @@ namespace GlobalDomination
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<GDomContext>(opt =>
-                opt.UseSqlServer(Configuration.GetConnectionString("GDomDatabase")));
+            var readOptions = new DbContextOptionsBuilder<GDomContext>();
+            readOptions.UseSqlServer(Configuration.GetConnectionString("GDomDatabaseReadonly"));
+            GDomContext readContext = new GDomContext(readOptions);
+
+            var writeOptions = new DbContextOptionsBuilder<GDomContext>();
+            writeOptions.UseSqlServer(Configuration.GetConnectionString("GDomDatabaseReadWrite"));
+            GDomContext writeContext = new GDomContext(readOptions);
+
+            services.AddSingleton(typeof((GDomContext readGDomContext, GDomContext writeGDomContext)), (readContext, writeContext));
+
+            //services.AddDbContext<GDomContext>(opt =>
+            //    opt.UseSqlServer(Configuration.GetConnectionString("GDomDatabase")));
             //services.AddDbContext<GDomContext>(opt =>
             //    opt.UseInMemoryDatabase("GDomDatabase"));
 
