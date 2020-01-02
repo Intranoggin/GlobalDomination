@@ -18,15 +18,17 @@ namespace GlobalDomination.Controllers
     [ApiController]
     public class FacilityTypesController : ControllerBase
     {
-        private readonly GDomContext _context;
+        private readonly GDomContext _readContext;
+        private readonly GDomContext _writeContext;
         private readonly IAsyncPolicy<FacilityTypes> _itemCachePolicy;
         private readonly IAsyncPolicy<List<FacilityTypes>> _collectionCachePolicy;
         private readonly IDistributedCache _cache;
         private const string _facilityTypesKey = "FacilityTypesCacheKey";
 
-        public FacilityTypesController(GDomContext context, IDistributedCache cache, IReadOnlyPolicyRegistry<string> policyRegistry)
+        public FacilityTypesController((GDomContext readContext, GDomContext writeContext) context, IDistributedCache cache, IReadOnlyPolicyRegistry<string> policyRegistry)
         {
-            _context = context;
+            _readContext = context.readContext;
+            _writeContext = context.writeContext;
             _cache = cache;
             _itemCachePolicy = policyRegistry.Get<IAsyncPolicy<FacilityTypes>>(CachePolicyHelper.FacilityTypesEntityCachePolicyName);
             _collectionCachePolicy = policyRegistry.Get<IAsyncPolicy<List<FacilityTypes>>>(CachePolicyHelper.FacilityTypesEntityCollectionCachePolicyName);
@@ -36,7 +38,8 @@ namespace GlobalDomination.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<FacilityTypes>>> GetFacilityTypes()
         {
-            var facilityTypes = await _collectionCachePolicy.ExecuteAsync(context => _context.FacilityTypes.ToListAsync<FacilityTypes>(), new Context(_facilityTypesKey));
+            //var facilityTypes = await _collectionCachePolicy.ExecuteAsync(context => _readContext.FacilityTypes.ToListAsync<FacilityTypes>(), new Context(_facilityTypesKey));
+            var facilityTypes = await _collectionCachePolicy.ExecuteAsync(context => _readContext.FacilityTypes.Where(f => true).AsNoTracking().ToListAsync<FacilityTypes>(), new Context(_facilityTypesKey));
 
             if (facilityTypes == null)
             {
@@ -50,7 +53,8 @@ namespace GlobalDomination.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<FacilityTypes>> GetFacilityTypes(Guid id)
         {
-            var facilityTypes = await _itemCachePolicy.ExecuteAsync(context => _context.FacilityTypes.FindAsync(id).AsTask(), new Context(_facilityTypesKey + id));
+            //var facilityTypes = await _itemCachePolicy.ExecuteAsync(context => _readContext.FacilityTypes.FindAsync(id).AsTask(), new Context(_facilityTypesKey + id));
+            var facilityTypes = await _itemCachePolicy.ExecuteAsync(context => _readContext.FacilityTypes.Where(f => f.FacilityTypeId == id).AsNoTracking().FirstAsync(), new Context(_facilityTypesKey + id));
 
             if (facilityTypes == null)
             {
@@ -73,11 +77,13 @@ namespace GlobalDomination.Controllers
             await _cache.RemoveAsync(_facilityTypesKey);
             await _cache.RemoveAsync(_facilityTypesKey + id);
 
-            _context.Entry(facilityTypes).State = EntityState.Modified;
+            _writeContext.Entry(facilityTypes).State = EntityState.Modified;
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _writeContext.SaveChangesAsync();
+                _writeContext.Entry(facilityTypes).State = EntityState.Detached;
+                _readContext.Entry(facilityTypes).State = EntityState.Detached;
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -101,22 +107,8 @@ namespace GlobalDomination.Controllers
         public async Task<ActionResult<FacilityTypes>> PostFacilityTypes(FacilityTypes facilityTypes)
         {
             await _cache.RemoveAsync(_facilityTypesKey);
-            _context.FacilityTypes.Add(facilityTypes);
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (FacilityTypesExists(facilityTypes.FacilityTypeId))
-                {
-                    return Conflict();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _writeContext.FacilityTypes.Add(facilityTypes);
+            await _writeContext.SaveChangesAsync();           
 
             return CreatedAtAction("GetFacilityTypes", new { id = facilityTypes.FacilityTypeId }, facilityTypes);
         }
@@ -125,7 +117,7 @@ namespace GlobalDomination.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<FacilityTypes>> DeleteFacilityTypes(Guid id)
         {
-            var facilityTypes = await _context.FacilityTypes.FindAsync(id);
+            var facilityTypes = await _writeContext.FacilityTypes.FindAsync(id);
             if (facilityTypes == null)
             {
                 return NotFound();
@@ -133,15 +125,15 @@ namespace GlobalDomination.Controllers
 
             await _cache.RemoveAsync(_facilityTypesKey);
             await _cache.RemoveAsync(_facilityTypesKey + id);
-            _context.FacilityTypes.Remove(facilityTypes);
-            await _context.SaveChangesAsync();
+            _writeContext.FacilityTypes.Remove(facilityTypes);
+            await _writeContext.SaveChangesAsync();
 
             return facilityTypes;
         }
 
         private bool FacilityTypesExists(Guid id)
         {
-            return _context.FacilityTypes.Any(e => e.FacilityTypeId == id);
+            return _readContext.FacilityTypes.Any(e => e.FacilityTypeId == id);
         }
     }
 }

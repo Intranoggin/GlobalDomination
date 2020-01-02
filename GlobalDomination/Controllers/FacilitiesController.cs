@@ -148,7 +148,7 @@ namespace GlobalDomination.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<Facilities>> DeleteFacilities(Guid id)
         {
-            var facilities = await _readContext.Facilities.FindAsync(id);
+            var facilities = await _writeContext.Facilities.FindAsync(id);
             if (facilities == null)
             {
                 return NotFound();
