@@ -38,7 +38,6 @@ namespace GlobalDomination.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<FacilityTypes>>> GetFacilityTypes()
         {
-
             //var facilityTypes = await _collectionCachePolicy.ExecuteAsync(context => _readContext.FacilityTypes.ToListAsync<FacilityTypes>(), new Context(_facilityTypesKey));
             var facilityTypes = await _collectionCachePolicy.ExecuteAsync(context => _readContext.FacilityTypes.Where(f => true).AsNoTracking().ToListAsync<FacilityTypes>(), new Context(_facilityTypesKey));
 
