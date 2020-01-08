@@ -33,11 +33,11 @@ namespace GlobalDomination
         {
             var readOptions = new DbContextOptionsBuilder<GDomContext>();
             readOptions.UseSqlServer(Configuration.GetConnectionString("GDomDatabaseReadonly"));
-            GDomContext readContext = new GDomContext(readOptions);
+            GDomContext readContext = new GDomContext(readOptions.Options);
 
             var writeOptions = new DbContextOptionsBuilder<GDomContext>();
             writeOptions.UseSqlServer(Configuration.GetConnectionString("GDomDatabaseReadWrite"));
-            GDomContext writeContext = new GDomContext(readOptions);
+            GDomContext writeContext = new GDomContext(writeOptions.Options);
 
             services.AddSingleton(typeof((GDomContext readGDomContext, GDomContext writeGDomContext)), (readContext, writeContext));
 
