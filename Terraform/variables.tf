@@ -1,6 +1,6 @@
 variable "location"{}
 
-variable "prefix"{
+variable "rootname"{
     type = string
     default = "my"
  }
@@ -13,8 +13,9 @@ variable "prefix"{
 variable "tags" {
     type = map(string)
     default = {
-        Environment = "Terraform Dev"
-        Dept = "Basic"
+        Environment = "Dev"
+        Dept = "Health and Safety"
+        Site = "GlobalDomination"        
   }
 }
 
