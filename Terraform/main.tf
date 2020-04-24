@@ -5,16 +5,16 @@ provider "azurerm" {
 }
 
 # Create a resource group
-resource "azurerm_resource_group" "BasicWebApp" {
-    name     = "${var.prefix}BasicWebAppRG${var.environment}"
+resource "azurerm_resource_group" "RegionAWebApp" {
+    name     = "${var.rootname}WebAppRG-${var.environment}"
     location = var.location
     tags     = var.tags  
 }
 
-resource "azurerm_app_service_plan" "BasicWebApp" {
-    name     = "${var.prefix}BasicWebAppPlan${var.environment}"
-    location = azurerm_resource_group.BasicWebApp.location
-    resource_group_name = azurerm_resource_group.BasicWebApp.name
+resource "azurerm_app_service_plan" "RegionAWebApp" {
+    name     = "${var.rootname}WebAppPlan${var.environment}"
+    location = azurerm_resource_group.RegionAWebApp.location
+    resource_group_name = azurerm_resource_group.RegionAWebApp.name
     tags     = var.tags
 
   sku {
@@ -23,9 +23,9 @@ resource "azurerm_app_service_plan" "BasicWebApp" {
   }
 }
 
-resource "azurerm_app_service" "BasicWebApp" {
-  name                = "${var.prefix}BasicWebAppService${var.environment}"
-  location            = azurerm_resource_group.BasicWebApp.location
-  resource_group_name = azurerm_resource_group.BasicWebApp.name
-  app_service_plan_id = azurerm_app_service_plan.BasicWebApp.id 
+resource "azurerm_app_service" "RegionAWebApp" {
+  name                = "${var.rootname}WebAppService${var.environment}"
+  location            = azurerm_resource_group.RegionAWebApp.location
+  resource_group_name = azurerm_resource_group.RegionAWebApp.name
+  app_service_plan_id = azurerm_app_service_plan.RegionAWebApp.id 
 }
